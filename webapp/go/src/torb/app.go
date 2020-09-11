@@ -184,11 +184,7 @@ func fetchEventReservationMap(eventID int64) (map[int64]Reservation, error) {
 	return reservationMap, nil
 }
 
-func getEvent(eventID, loginUserID int64) (*Event, error) {
-	var event Event
-	if err := db.QueryRow("SELECT * FROM events WHERE id = ?", eventID).Scan(&event.ID, &event.Title, &event.PublicFg, &event.ClosedFg, &event.Price); err != nil {
-		return nil, err
-	}
+func (event *Event) setStatus(loginUserID int64) *Event {
 	event.Sheets = map[string]*Sheets{
 		"S": &Sheets{},
 		"A": &Sheets{},
@@ -196,10 +192,10 @@ func getEvent(eventID, loginUserID int64) (*Event, error) {
 		"C": &Sheets{},
 	}
 
-	reservationMap, err := fetchEventReservationMap(eventID)
+	reservationMap, err := fetchEventReservationMap(event.ID)
 	if err != nil {
 		logger.Errorf("FetchEventReservationMap: %s", err)
-		return nil, err
+		return event
 	}
 
 	for i := 1; i <= 1000; i++ {
@@ -221,7 +217,16 @@ func getEvent(eventID, loginUserID int64) (*Event, error) {
 		event.Sheets[sheet.Rank].Detail = append(event.Sheets[sheet.Rank].Detail, &sheet)
 	}
 
-	return &event, nil
+	return event
+}
+
+func getEvent(eventID, loginUserID int64) (*Event, error) {
+	var event Event
+	if err := db.QueryRow("SELECT * FROM events WHERE id = ?", eventID).Scan(&event.ID, &event.Title, &event.PublicFg, &event.ClosedFg, &event.Price); err != nil {
+		return nil, err
+	}
+
+	return event.setStatus(loginUserID), nil
 }
 
 func sanitizeEvent(e *Event) *Event {
