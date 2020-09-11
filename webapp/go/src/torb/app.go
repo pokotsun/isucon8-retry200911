@@ -162,6 +162,36 @@ func getEvents(all bool) ([]*Event, error) {
 	return events, nil
 }
 
+func fetchSheetIDList() []int64 {
+	idList := []int64{}
+	for i := 1; i <= 1000; i++ {
+		idList = append(idList, int64(i))
+	}
+	return idList
+}
+
+func fetchEventReservationMap(eventID int64) (map[int64]Reservation, error) {
+	query := "SELECT * FROM reservations WHERE event_id = ? AND sheet_id IN (?) AND canceled_at IS NULL GROUP BY event_id, sheet_id HAVING reserved_at = MIN(reserved_at)"
+	sheetIdList := fetchSheetIDList()
+	inQuery, inArgs, err := sqlx.In(query, eventID, sheetIdList)
+	if err != nil {
+		return nil, err
+	}
+	rows, err := db.Query(inQuery, inArgs...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	reservationMap := map[int64]Reservation{}
+	for rows.Next() {
+		var r Reservation
+		rows.Scan(&r.ID, &r.EventID, &r.SheetID, &r.UserID, &r.ReservedAt, &r.CanceledAt)
+		reservationMap[r.SheetID] = r
+	}
+	return reservationMap, nil
+}
+
 func getEvent(eventID, loginUserID int64) (*Event, error) {
 	var event Event
 	if err := db.QueryRow("SELECT * FROM events WHERE id = ?", eventID).Scan(&event.ID, &event.Title, &event.PublicFg, &event.ClosedFg, &event.Price); err != nil {
@@ -509,6 +539,7 @@ func main() {
 		}
 		return c.JSON(200, sanitizeEvent(event))
 	})
+
 	e.POST("/api/events/:id/actions/reserve", func(c echo.Context) error {
 		eventID, err := strconv.ParseInt(c.Param("id"), 10, 64)
 		if err != nil {
@@ -834,6 +865,7 @@ func main() {
 		}
 		return renderReportCSV(c, reports)
 	}, adminLoginRequired)
+
 	e.GET("/admin/api/reports/sales", func(c echo.Context) error {
 		rows, err := db.Query("select r.*, s.rank as sheet_rank, s.num as sheet_num, s.price as sheet_price, e.id as event_id, e.price as event_price from reservations r inner join sheets s on s.id = r.sheet_id inner join events e on e.id = r.event_id order by reserved_at asc for update")
 		if err != nil {
