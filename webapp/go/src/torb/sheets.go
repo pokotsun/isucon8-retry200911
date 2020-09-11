@@ -18,7 +18,7 @@ func fetchSheetFromID(id int64) Sheet {
 func fetchAllSheets() []Sheet {
 	sheets := make([]Sheet, 1000, 1000)
 	for i := 0; i <= 1000; i++ {
-		sheets[i] = fetchSheetFromID(int64(i))
+		sheets = append(sheets, fetchSheetFromID(int64(i)))
 	}
 	return sheets
 }
