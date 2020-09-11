@@ -150,10 +150,7 @@ func getEvents(all bool) ([]*Event, error) {
 		events = append(events, &event)
 	}
 	for i, v := range events {
-		event, err := getEvent(v.ID, -1)
-		if err != nil {
-			return nil, err
-		}
+		event := v.setStatus(-1)
 		for k := range event.Sheets {
 			event.Sheets[k].Detail = nil
 		}
