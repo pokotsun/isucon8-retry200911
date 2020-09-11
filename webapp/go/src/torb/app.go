@@ -162,14 +162,6 @@ func getEvents(all bool) ([]*Event, error) {
 	return events, nil
 }
 
-func fetchSheetIDList() []int64 {
-	idList := []int64{}
-	for i := 1; i <= 1000; i++ {
-		idList = append(idList, int64(i))
-	}
-	return idList
-}
-
 func fetchEventReservationMap(eventID int64) (map[int64]Reservation, error) {
 	query := "SELECT * FROM reservations WHERE event_id = ? AND sheet_id IN (?) AND canceled_at IS NULL GROUP BY event_id, sheet_id HAVING reserved_at = MIN(reserved_at)"
 	sheetIdList := fetchSheetIDList()
@@ -204,11 +196,7 @@ func getEvent(eventID, loginUserID int64) (*Event, error) {
 		"C": &Sheets{},
 	}
 
-	rows, err := db.Query("SELECT * FROM sheets ORDER BY `rank`, num")
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
+	sheets := fetchAllSheets()
 
 	reservationMap, err := fetchEventReservationMap(eventID)
 	if err != nil {
@@ -216,11 +204,7 @@ func getEvent(eventID, loginUserID int64) (*Event, error) {
 		return nil, err
 	}
 
-	for rows.Next() {
-		var sheet Sheet
-		if err := rows.Scan(&sheet.ID, &sheet.Rank, &sheet.Num, &sheet.Price); err != nil {
-			return nil, err
-		}
+	for _, sheet := range sheets {
 		event.Sheets[sheet.Rank].Price = event.Price + sheet.Price
 		event.Total++
 		event.Sheets[sheet.Rank].Total++
