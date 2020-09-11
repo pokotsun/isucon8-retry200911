@@ -3,4 +3,4 @@ export GOPATH
 
 .PHONY: build
 build:
-	cd src/torb && go build -v -o ../../ *.go
+	go build -v -o torb src/torb/*.go
