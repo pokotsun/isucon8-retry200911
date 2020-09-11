@@ -196,15 +196,15 @@ func getEvent(eventID, loginUserID int64) (*Event, error) {
 		"C": &Sheets{},
 	}
 
-	sheets := fetchAllSheets()
-
 	reservationMap, err := fetchEventReservationMap(eventID)
 	if err != nil {
 		logger.Errorf("FetchEventReservationMap: %s", err)
 		return nil, err
 	}
 
-	for _, sheet := range sheets {
+	for i := 1; i <= 1000; i++ {
+		sheet := fetchSheetFromID(int64(i))
+		logger.Infow("sheet", "sheet", sheet)
 		event.Sheets[sheet.Rank].Price = event.Price + sheet.Price
 		event.Total++
 		event.Sheets[sheet.Rank].Total++
