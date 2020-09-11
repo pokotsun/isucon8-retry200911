@@ -1,12 +1,6 @@
-all: build
-
-.PHONY: clean
-clean:
-	rm -rf torb
-
-deps:
-	gb vendor restore
+GOPATH := ${PWD}/srt/torb
+export GOPATH
 
 .PHONY: build
 build:
-	GOPATH=`pwd`:`pwd`/vendor go build -v torb
+	cd src/torb && go build -v -o ../../ *.go
