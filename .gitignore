@@ -1,5 +1,7 @@
 bench/
 webapp/go/vendor/
+webapp/go/srt/
+webapp/go/torb
 webapp/perl/
 webapp/ruby/
 webapp/python/
